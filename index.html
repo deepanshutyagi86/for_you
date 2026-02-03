@@ -34,6 +34,15 @@
             border-radius: 15px; filter: contrast(1.1) brightness(0.8);
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
             transition: opacity 2s;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0) rotate(0deg); }
+            25% { transform: translateY(-20px) translateX(10px) rotate(5deg); }
+            50% { transform: translateY(0) translateX(20px) rotate(0deg); }
+            75% { transform: translateY(-20px) translateX(10px) rotate(-5deg); }
+            100% { transform: translateY(0) translateX(0) rotate(0deg); }
         }
 
         .container {
@@ -93,7 +102,10 @@
 
     <canvas id="bg-canvas"></canvas>
     <div class="floating-memories" id="photoLayer"></div>
-    <audio id="song" src="song.mp3" loop></audio>
+    <audio id="song" loop>
+        <source src="song.mp3" type="audio/mpeg">
+        <source src="song.ogg" type="audio/ogg">
+    </audio>
 
     <div class="container">
         <div class="screen active" id="s1">
@@ -114,19 +126,19 @@
 
         <div class="screen" id="s3">
             <h1>Who You Became ✨</h1>
-            <p>You grew into someone who feels deeply, cares endlessly, and carries a softness that this world doesn’t deserve. You call it weakness. It's actually your superpower.</p>
+            <p>You grew into someone who feels deeply, cares endlessly, and carries a softness that this world doesn't deserve. You call it weakness. It's actually your superpower.</p>
             <button class="btn" onclick="nextScreen(4)">Next</button>
         </div>
 
         <div class="screen" id="s4">
             <h1>What You Mean To Me 💫</h1>
-            <p>You are calm in chaos. Light in overthinking nights. A presence that makes everything feel less heavy. You didn’t enter my life — you changed its atmosphere.</p>
+            <p>You are calm in chaos. Light in overthinking nights. A presence that makes everything feel less heavy. You didn't enter my life — you changed its atmosphere.</p>
             <button class="btn" onclick="nextScreen(5)">Next</button>
         </div>
 
         <div class="screen" id="s5">
             <h1 style="text-shadow: 0 0 10px var(--pink);">The Truth ❤️</h1>
-            <p>The most important thing that happened the day you were born wasn’t in the news. It was you. And in all timelines, I’m grateful mine crossed yours.</p>
+            <p>The most important thing that happened the day you were born wasn't in the news. It was you. And in all timelines, I'm grateful mine crossed yours.</p>
             <button class="btn" onclick="nextScreen(6)">Continue</button>
         </div>
 
@@ -160,6 +172,7 @@
         })();
 
         const song = document.getElementById('song');
+        let musicStarted = false;
 
         const captions = [
             "A glimpse of perfection.", "The way the light finds you.", "My favorite version of reality.",
@@ -173,7 +186,25 @@
         let currentPhotoIdx = 0;
 
         function openGate() {
-            song.play().catch(() => console.log("Music blocked"));
+            // FIX 1: Improved song playback with user interaction handling
+            if (!musicStarted) {
+                song.play().then(() => {
+                    musicStarted = true;
+                    console.log("Music started successfully");
+                }).catch(err => {
+                    console.log("Music autoplay blocked:", err);
+                    // Retry on next user interaction
+                    document.addEventListener('click', function retryMusic() {
+                        if (!musicStarted) {
+                            song.play().then(() => {
+                                musicStarted = true;
+                                document.removeEventListener('click', retryMusic);
+                            }).catch(() => {});
+                        }
+                    });
+                });
+            }
+            
             setupCollage();
             const gate = document.getElementById('gate');
             gate.style.transform = 'scale(5)';
@@ -184,11 +215,11 @@
         function nextScreen(num) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('s' + num).classList.add('active');
-            // Song logic removed from here so it plays continuously once started
         }
 
         function setupCollage() {
             const container = document.getElementById('memory-container');
+            container.innerHTML = ''; // Clear any existing images
             for (let i = 20; i >= 1; i--) {
                 const img = document.createElement('img');
                 img.src = `photo${i}.jpg`;
@@ -201,9 +232,10 @@
                 img.style.zIndex = 21 - i;
                 img.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
                 img.style.transition = 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)';
+                img.dataset.removed = 'false';
                 
                 img.onclick = function() {
-                    if (this.style.opacity !== '0') {
+                    if (this.dataset.removed === 'false') {
                         revealNext(this);
                     }
                 };
@@ -212,6 +244,7 @@
         }
 
         function revealNext(el) {
+            el.dataset.removed = 'true';
             el.style.transform = `translate(200%, -50%) rotate(45deg)`;
             el.style.opacity = '0';
             el.style.pointerEvents = 'none';
@@ -249,72 +282,29 @@
                 });
         }
 
-        // --- Photo-Heart Canvas Background ---
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
-        let hearts = [];
-        const heartImages = [];
-
-        // Load images for the hearts
-        for(let i=1; i<=20; i++) {
-            const img = new Image();
-            img.src = `photo${i}.jpg`;
-            heartImages.push(img);
-        }
-
-        function initHearts() {
-            canvas.width = window.innerWidth; 
-            canvas.height = window.innerHeight;
-            hearts = [];
-            for(let i=0; i<15; i++) {
-                hearts.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    size: 40 + Math.random() * 60,
-                    speed: 0.5 + Math.random() * 1,
-                    img: heartImages[i % heartImages.length],
-                    angle: Math.random() * Math.PI * 2
-                });
+        // FIX 2: Simple floating images in background
+        const photoLayer = document.getElementById('photoLayer');
+        
+        function createFloatingImages() {
+            for(let i = 1; i <= 20; i++) {
+                const img = document.createElement('img');
+                img.src = `photo${i}.jpg`;
+                img.className = 'drift-photo';
+                img.style.left = Math.random() * 100 + '%';
+                img.style.top = Math.random() * 100 + '%';
+                img.style.width = (80 + Math.random() * 100) + 'px';
+                img.style.animationDuration = (15 + Math.random() * 20) + 's';
+                img.style.animationDelay = Math.random() * 5 + 's';
+                
+                img.onload = function() {
+                    this.style.opacity = '0.2';
+                };
+                
+                photoLayer.appendChild(img);
             }
         }
-
-        function drawHeartImage(ctx, x, y, size, img) {
-            ctx.save();
-            ctx.translate(x, y);
-            // Create heart clipping path
-            ctx.beginPath();
-            ctx.moveTo(0, size / 4);
-            ctx.bezierCurveTo(0, 0, -size / 2, 0, -size / 2, size / 4);
-            ctx.bezierCurveTo(-size / 2, size / 2, 0, size * 0.75, 0, size);
-            ctx.bezierCurveTo(0, size * 0.75, size / 2, size / 2, size / 2, size / 4);
-            ctx.bezierCurveTo(size / 2, 0, 0, 0, 0, size / 4);
-            ctx.closePath();
-            ctx.clip();
-            // Draw image inside heart
-            if (img.complete) {
-                ctx.drawImage(img, -size/2, 0, size, size);
-            }
-            ctx.restore();
-            // Draw heart border
-            ctx.strokeStyle = "rgba(255, 77, 109, 0.5)";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        }
-
-        function animate() {
-            ctx.clearRect(0,0,canvas.width, canvas.height);
-            hearts.forEach(h => {
-                h.y -= h.speed;
-                h.x += Math.sin(Date.now() * 0.001 + h.angle) * 0.5;
-                if(h.y + h.size < 0) h.y = canvas.height + h.size;
-                drawHeartImage(ctx, h.x, h.y, h.size, h.img);
-            });
-            requestAnimationFrame(animate);
-        }
-
-        window.addEventListener('resize', initHearts);
-        initHearts();
-        animate();
+        
+        createFloatingImages();
     </script>
 </body>
 </html>
