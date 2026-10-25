@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Anam vs. Deepanshu</title>
+<meta name="theme-color" content="#140d0a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* Edit the words in the CONFIG section further down, not here. */
+:root{
+  --bg:#140d0a; --wood:#5b3a22; --wood-dark:#3a2416; --wood-light:#7a5232;
+  --brass:#d4ac55; --paper:#f4e8cc; --paper-dark:#e3d2aa; --ink:#2a1c12;
+  --red:#b3261e; --green:#2f6d3b; --blue:#3a5a8c; --glow:#7fe3ff;
+  --serif:'Lora',Georgia,serif; --display:'Playfair Display',Georgia,serif; --mono:'Courier Prime',monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--paper);font-family:var(--serif);overflow:hidden;overscroll-behavior:none}
+button{font:inherit;cursor:pointer}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;max-width:560px;margin:0 auto;
+  background:radial-gradient(120% 70% at 50% 0%,#3b2618 0%,#1b120d 55%,#0f0907 100%)}
+#app.shake{animation:shake .45s}
+@keyframes shake{10%,90%{transform:translate(-2px,1px)}20%,80%{transform:translate(4px,-2px)}30%,50%,70%{transform:translate(-6px,2px)}40%,60%{transform:translate(6px,-1px)}}
+#app.dim::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.55);pointer-events:none;z-index:2}
+
+/* ---------- Stage ---------- */
+#stage{position:relative;flex:1 1 auto;min-height:0;overflow:hidden;opacity:0;transition:opacity 1s,filter 2s}
+#stage.on{opacity:1}
+.wall{position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(0,0,0,.18) 0 2px,transparent 2px 64px),linear-gradient(#2b1b12,#1d130d)}
+.seal{position:absolute;top:4%;left:50%;transform:translateX(-50%);width:70px;height:70px;border-radius:50%;
+  border:3px solid var(--brass);display:grid;place-items:center;font-size:30px;color:var(--brass);
+  background:radial-gradient(#3a2618,#22160f);box-shadow:0 0 30px rgba(212,172,85,.15)}
+.bench{position:absolute;left:8%;right:8%;top:22%;height:22%;background:linear-gradient(var(--wood-light),var(--wood) 40%,var(--wood-dark));
+  border-radius:8px 8px 2px 2px;box-shadow:0 10px 30px rgba(0,0,0,.6),inset 0 2px 0 rgba(255,255,255,.08)}
+.nameplate{position:absolute;left:50%;top:22%;transform:translateX(-50%);background:linear-gradient(#e9cd85,#b88d3a);
+  color:var(--ink);font-family:var(--display);font-weight:800;padding:6px 14px;border-radius:3px;font-size:clamp(12px,3.6vw,16px);
+  white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.nameplate small{display:block;font-family:var(--mono);font-weight:400;font-size:.62em;letter-spacing:.12em;text-align:center}
+.gavel{position:absolute;right:10%;top:-22px;font-size:34px;transform-origin:80% 80%}
+.gavel.bang{animation:bang .35s}
+@keyframes bang{40%{transform:rotate(-35deg)}}
+.floor{position:absolute;left:0;right:0;bottom:0;height:42%;background:linear-gradient(#24170f,#120b08)}
+.actor{position:absolute;bottom:6%;display:flex;flex-direction:column;align-items:center;transition:filter .3s,transform .3s,opacity .6s}
+.actor .tag{font-family:var(--mono);font-size:11px;color:var(--paper-dark);opacity:.75;margin-top:4px;white-space:nowrap}
+.actor.talk{transform:translateY(-6px) scale(1.04);filter:drop-shadow(0 0 14px rgba(255,220,150,.35))}
+.actor.mute{filter:brightness(.55)}
+#a-lawyer{left:4%} #a-dip{left:50%;transform:translateX(-50%)} #a-dip.talk{transform:translate(-50%,-6px) scale(1.04)}
+#a-bailiff{right:5%}
+.dock{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:120px;height:46px;background:linear-gradient(var(--wood),var(--wood-dark));border-radius:4px 4px 0 0;z-index:1}
+#a-dip svg{position:relative;z-index:0;margin-bottom:22px}
+#a-dip .tag{position:relative;z-index:2;margin-top:-18px}
+.poof{opacity:0!important;transform:translate(-50%,-30px) scale(.6)!important}
+.lawyer-eyes{animation:blink 4s infinite}
+@keyframes blink{0%,94%,100%{opacity:1}96%{opacity:.1}}
+
+/* ---------- Dialogue ---------- */
+#dialog{position:relative;flex:0 0 auto;min-height:190px;padding:14px 16px calc(16px + env(safe-area-inset-bottom));
+  background:linear-gradient(#21150e,#140d09);border-top:2px solid var(--brass);z-index:3;display:none}
+#dialog.on{display:block}
+.speaker{display:flex;align-items:center;gap:8px;font-family:var(--display);color:var(--brass);font-size:15px;margin-bottom:6px}
+.speaker .ico{font-size:20px}
+#line{font-size:17px;line-height:1.5;min-height:3em;color:var(--paper)}
+#line em{color:#ffd88a;font-style:italic}
+.tap{position:absolute;right:16px;bottom:calc(10px + env(safe-area-inset-bottom));font-family:var(--mono);font-size:12px;color:var(--brass);opacity:0}
+.tap.show{opacity:1;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.35}}
+#choices{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.btn{flex:1 1 40%;min-height:48px;padding:10px 14px;border-radius:10px;border:2px solid var(--brass);background:#2c1d13;color:var(--paper);
+  font-family:var(--display);font-size:16px;letter-spacing:.02em;transition:transform .1s,background .2s}
+.btn:active{transform:scale(.96)}
+.btn.red{background:#5a1612;border-color:#e0675e}
+.btn.green{background:#1f4527;border-color:#7ccf8a}
+.btn.blue{background:#22324f;border-color:#8fb2ec}
+.btn.full{flex-basis:100%}
+
+/* ---------- Overlay cards ---------- */
+#overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:18px;z-index:5;background:rgba(10,6,4,.6);backdrop-filter:blur(2px)}
+#overlay.on{display:flex}
+#overlay.under{bottom:200px}
+.card{position:relative;width:100%;max-width:440px;max-height:100%;overflow:auto;background:var(--paper);color:var(--ink);border-radius:6px;padding:22px 20px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6);background-image:linear-gradient(rgba(0,0,0,.03) 1px,transparent 1px);background-size:100% 26px;
+  animation:pop .4s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.85) rotate(-2deg);opacity:0}}
+.card h2{font-family:var(--display);margin:0 0 6px;font-size:22px}
+.card .mono{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:#6b5236}
+.card p{font-size:16px;line-height:1.55}
+.file-tab{position:absolute;top:0;left:16px;background:var(--paper-dark);padding:3px 12px;border-radius:0 0 5px 5px;font-family:var(--mono);font-size:12px;color:var(--ink)}
+.card.serious{background-color:#eadfca}
+.stamp{position:absolute;right:14px;bottom:18px;padding:6px 12px;border:4px solid currentColor;border-radius:6px;font-family:var(--mono);font-weight:700;
+  font-size:24px;letter-spacing:.1em;transform:rotate(-14deg);opacity:.9;animation:stamp .35s cubic-bezier(.2,1.6,.4,1);background:rgba(244,232,204,.6)}
+.stamp.red{color:var(--red)} .stamp.green{color:var(--green)}
+@keyframes stamp{from{transform:rotate(-14deg) scale(2.6);opacity:0}}
+
+.envelope{width:280px;height:190px;position:relative;cursor:pointer;animation:float 3s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-8px)}}
+.env-body{position:absolute;inset:0;background:linear-gradient(135deg,#e8d6ad,#cdb582);border-radius:6px;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.env-flap{position:absolute;left:0;right:0;top:0;height:60%;background:linear-gradient(#d9c394,#bfa46d);clip-path:polygon(0 0,100% 0,50% 100%);transform-origin:top;transition:transform .6s}
+.envelope.open .env-flap{transform:rotateX(180deg)}
+.wax{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:58px;height:58px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#d2463c,#8d1a14);display:grid;place-items:center;color:#f3c6b8;font-family:var(--display);font-size:22px;
+  box-shadow:0 3px 8px rgba(0,0,0,.4);transition:transform .4s,opacity .4s}
+.envelope.open .wax{transform:translate(-50%,-50%) scale(1.6);opacity:0}
+.hint{margin-top:22px;text-align:center;font-family:var(--mono);color:var(--brass);font-size:13px;animation:pulse 1.4s infinite}
+
+.sigpad{width:100%;height:150px;background:#fffaf0;border:2px dashed #a58a5c;border-radius:6px;touch-action:none;display:block}
+.sigrow{display:flex;gap:10px;margin-top:12px}
+
+.excard{padding:14px;background:#fffdf6}
+.photo{display:block;width:100%;max-height:calc(100vh - 330px);object-fit:contain;background:#1b1410;border:8px solid #fff;box-shadow:0 6px 18px rgba(0,0,0,.3);transform:rotate(-1.2deg)}
+.exlabel{position:absolute;top:4px;right:8px;z-index:1;background:var(--red);color:#fff;font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:3px;transform:rotate(4deg)}
+
+.order{text-align:center;padding:26px 22px;max-height:calc(100vh - 36px)}
+.order .crest{font-size:34px}
+.order h2{font-size:24px;letter-spacing:.04em}
+.order .verdict{font-family:var(--display);font-size:28px;margin:14px 0 6px}
+.order .sigimg{height:70px;max-width:70%;display:block;margin:10px auto 0;border-bottom:1px solid var(--ink)}
+.order table{width:100%;font-family:var(--mono);font-size:12px;border-collapse:collapse;margin:12px 0;text-align:left}
+.order td{padding:3px 0;border-bottom:1px dotted #b9a27a}
+.order td:last-child{text-align:right;font-weight:700;padding-left:8px}
+.footnote{font-family:var(--mono);font-size:11px;color:#6b5236;margin-top:12px}
+.order-ghost{position:absolute;right:8px;top:10px;width:64px;animation:hover 3s ease-in-out infinite}
+
+#ghost{position:absolute;left:50%;bottom:16%;width:120px;margin-left:-60px;opacity:0;z-index:4;pointer-events:none;transition:opacity 1.6s}
+#ghost.on{opacity:.92;animation:hover 3s ease-in-out infinite}
+@keyframes hover{0%,100%{translate:0 0}50%{translate:0 -14px}}
+#app.haunt #stage{filter:hue-rotate(160deg) saturate(.5) brightness(.75)}
+.flicker{animation:flick .9s}
+@keyframes flick{0%,40%,80%{opacity:1}20%,60%{opacity:.2}}
+
+.fx{position:fixed;pointer-events:none;z-index:9;font-size:24px;animation:fall 2.6s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg);opacity:.2}}
+.dove{position:fixed;pointer-events:none;z-index:9;font-size:30px;animation:fly 3s ease-out forwards}
+@keyframes fly{to{transform:translate(var(--dx),-110vh) scale(1.3);opacity:0}}
+#intro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:6;padding:24px;text-align:center}
+#intro .title{font-family:var(--display);color:var(--brass);font-size:13px;letter-spacing:.3em;margin-bottom:26px}
+.fade-out{opacity:0;transition:opacity .8s;pointer-events:none}
+.mute-btn{position:absolute;top:calc(10px + env(safe-area-inset-top));right:10px;z-index:8;background:rgba(0,0,0,.35);border:1px solid rgba(212,172,85,.5);color:var(--brass);border-radius:20px;padding:4px 10px;font-size:14px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <button class="mute-btn" id="muteBtn" aria-label="Sound on or off">🔊</button>
+
+  <section id="stage" aria-hidden="true">
+    <div class="wall"></div>
+    <div class="seal">⚖</div>
+    <div class="bench">
+      <div class="nameplate" id="plate">Judge<small>PRESIDING</small></div>
+      <div class="gavel" id="gavel">🔨</div>
+    </div>
+    <div class="floor"></div>
+
+    <div class="actor" id="a-lawyer">
+      <svg width="78" height="112" viewBox="0 -4 78 116">
+        <rect x="14" y="6" width="50" height="40" rx="10" fill="#9fb3c2" stroke="#4d6070" stroke-width="2"/>
+        <line x1="39" y1="6" x2="39" y2="-1" stroke="#4d6070" stroke-width="2"/><circle cx="39" cy="-1" r="3" fill="#7fe3ff"/>
+        <g class="lawyer-eyes"><rect x="23" y="18" width="10" height="9" rx="2" fill="#7fe3ff"/><rect x="45" y="18" width="10" height="9" rx="2" fill="#7fe3ff"/></g>
+        <rect x="27" y="33" width="24" height="4" rx="2" fill="#4d6070"/>
+        <path d="M10 112 L14 56 Q39 46 64 56 L68 112Z" fill="#1d2433"/>
+        <path d="M30 52 L39 70 L48 52Z" fill="#f2efe6"/><path d="M37 56 L41 56 L42 78 L39 84 L36 78Z" fill="#b3261e"/>
+        <rect x="22" y="84" width="18" height="4" fill="#d4ac55" opacity=".7"/>
+      </svg>
+      <span class="tag">Adv. Byte (AI)</span>
+    </div>
+
+    <div class="actor" id="a-dip">
+      <svg width="80" height="112" viewBox="0 0 80 112">
+        <path d="M14 112 L18 64 Q40 54 62 64 L66 112Z" fill="#e85d3a"/>
+        <path d="M20 66 L20 112 M30 62 L30 112 M40 60 L40 112 M50 62 L50 112 M60 66 L60 112" stroke="#9c2f15" stroke-width="3" opacity=".55"/>
+        <circle cx="40" cy="36" r="20" fill="#d9a37a"/>
+        <path d="M20 32 Q22 12 40 13 Q60 12 61 32 Q55 22 44 24 Q36 18 28 25 Q24 26 20 32Z" fill="#1c130e"/>
+        <circle cx="33" cy="38" r="2.2" fill="#1c130e"/><circle cx="47" cy="38" r="2.2" fill="#1c130e"/>
+        <path d="M34 47 Q40 44 46 47" stroke="#1c130e" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="dock"></div>
+      <span class="tag">Deepanshu · Accused</span>
+    </div>
+
+    <div class="actor" id="a-bailiff">
+      <div style="font-size:54px;line-height:1;position:relative">🐈<span style="position:absolute;left:4px;top:-20px;font-size:28px">🎩</span></div>
+      <span class="tag">Billi · Bailiff</span>
+    </div>
+
+    <svg id="ghost" viewBox="0 0 120 140">
+      <path d="M20 70 Q20 14 60 14 Q100 14 100 70 L100 128 Q92 118 84 128 Q76 138 68 128 Q60 118 52 128 Q44 138 36 128 Q28 118 20 128Z" fill="#f4f6ff" stroke="#c9d3ff" stroke-width="2"/>
+      <path d="M34 34 Q38 16 60 16 Q82 16 86 34 Q78 26 66 28 Q58 22 48 28Z" fill="#1c130e" opacity=".85"/>
+      <ellipse cx="48" cy="62" rx="5" ry="7" fill="#1c130e"/><ellipse cx="72" cy="62" rx="5" ry="7" fill="#1c130e"/>
+      <path d="M50 82 Q60 90 70 82" stroke="#1c130e" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="40" cy="76" r="5" fill="#ffb3c4" opacity=".6"/><circle cx="80" cy="76" r="5" fill="#ffb3c4" opacity=".6"/>
+    </svg>
+  </section>
+
+  <section id="dialog" aria-live="polite">
+    <div class="speaker"><span class="ico" id="spIco"></span><span id="spName"></span></div>
+    <div id="line"></div>
+    <div id="choices"></div>
+    <div class="tap" id="tap">tap ▸</div>
+  </section>
+
+  <div id="overlay"></div>
+  <div id="intro"></div>
+</div>
+
+<script>
+/* =========================================================
+   CONFIG: all the words live here. Edit freely.
+   ========================================================= */
+const CONFIG = {
+  judgeName: "Anam",
+  caseNo: "CASE No. 0001/2026",
+  lawyerName: "Adv. Byte",
+
+  // Order matters: light ones first, the heaviest one last.
+  // serious:true = no objection from the lawyer, no jokes.
+  charges: [
+    {
+      count: "Fighting, then disappearing",
+      detail: "January. After a fight, she cried, and he went silent.",
+      excuse: "Objection! He was on <em>emotional airplane mode</em>!",
+      own: "No, Byte. She was crying and I disappeared. I should have stayed."
+    },
+    {
+      count: "Replying \"hmm\" to her long paragraphs",
+      detail: "Long heartfelt paragraphs. Answered with three letters.",
+      excuse: "Objection! \"Hmm\" is <em>deeply layered</em>!",
+      own: "It isn't. She deserved a real reply."
+    },
+    {
+      count: "Misunderstanding her words",
+      detail: "He heard something she never meant, and never asked.",
+      excuse: "Objection! Language is confusing. Even <em>I</em> get it wrong!",
+      own: "I never asked what you meant, Anam. I was wrong."
+    },
+    {
+      serious: true,
+      count: "Hurting her with abusive words",
+      detail: "In anger, he said things that should never be said.",
+      excuse: "No objection, Your Honour. Some things should not be defended.",
+      own: "I said things no one should ever hear. Anger is no excuse. I am truly sorry."
+    }
+  ],
+
+  exhibits: [
+    { img: "exhibit-a.jpg", title: "Exhibit A",
+      lawyer: "Exhibit A. Kitchen floor, phone glued to ear. Chairs were optional.",
+      memory: "Look at that guy. See how focused he is, talking to the one he loves. Still the same as that day." },
+    { img: "exhibit-b.jpg", title: "Exhibit B",
+      lawyer: "Exhibit B. Facial analysis: <em>completely lost</em> in you.",
+      memory: "Look how beautiful these two look together." },
+    { img: "exhibit-c.jpg", title: "Exhibit C",
+      lawyer: "Exhibit C. No comment. The photo speaks.",
+      memory: "Whenever I look at this face, I know she is the one I can live my whole life with." }
+  ],
+
+  witnesses: [
+    { name: "The Moon", icon: "🌙",
+      says: "Every night he stares at me, thinking of one person. I'm tired, Your Honour." },
+    { name: "Deepanshu's Phone Gallery", icon: "📱",
+      says: "Thousands of photos. Most of them are her." },
+    { name: "Lajpat Nagar Metro Station", icon: "🚇",
+      says: "He dropped her here, again and again. Holding hands till the last step. He never let go first." }
+  ],
+
+  plea: "Your Honour, I plead guilty on all counts. My ego came between us. I accept it. No excuses.",
+
+  lastWords: [
+    "Anamta, I know one thing.",
+    "You are the one that no one can ever replace in my life.",
+    "Even the thought that someone else could hold your hand shakes me.",
+    "I did many things wrong. I know that now.",
+    "But I want to start all over again. We can build it again.",
+    "And whatever you decide today, I will respect it."
+  ],
+
+  ghostLines: [
+    "Wait… I'm a ghost now? 👻",
+    "You executed me. Fair. I deserved it.",
+    "But you forgot one thing… <em>ghosts don't leave.</em>",
+    "I'll be at Lajpat Nagar metro, at the last step, where we held hands.",
+    "You can sentence my body. My soul has been yours since day one.",
+    "So thank you, actually. Now I'm with you, always. 🤍"
+  ]
+};
+</script>
+
+<script>
+/* ================= ENGINE ================= */
+const $ = s => document.querySelector(s);
+const app=$('#app'), stage=$('#stage'), dialog=$('#dialog'), lineEl=$('#line'), choicesEl=$('#choices'),
+      tapEl=$('#tap'), overlay=$('#overlay'), intro=$('#intro'), ghostEl=$('#ghost');
+const C = CONFIG, J = C.judgeName;
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const state = { signature:null, rulings:[], objections:0, verdict:null };
+
+/* preload photos */
+C.exhibits.forEach(e=>{ if(e.img){ const i=new Image(); i.src=e.img; } });
+
+/* ---------- sound (generated, no files) ---------- */
+let ac=null, muted=false;
+function audio(){ if(!ac){ try{ac=new (window.AudioContext||window.webkitAudioContext)()}catch(e){} } if(ac&&ac.state==='suspended') ac.resume(); return ac; }
+function tone(freq,dur,type='sine',vol=.2,slide=0){ const a=audio(); if(!a||muted) return;
+  const o=a.createOscillator(), g=a.createGain(); o.type=type; o.frequency.value=freq;
+  if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),a.currentTime+dur);
+  g.gain.setValueAtTime(vol,a.currentTime); g.gain.exponentialRampToValueAtTime(.001,a.currentTime+dur);
+  o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+dur); }
+function noise(dur,vol=.3){ const a=audio(); if(!a||muted) return; const b=a.createBuffer(1,a.sampleRate*dur,a.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,4);
+  const s=a.createBufferSource(), g=a.createGain(); g.gain.value=vol; s.buffer=b; s.connect(g).connect(a.destination); s.start(); }
+const sfx = {
+  gavel(){ noise(.12,.5); tone(110,.25,'triangle',.4,-50); },
+  stamp(){ noise(.08,.4); tone(80,.2,'sine',.35,-30); },
+  blip(){ tone(520+Math.random()*80,.03,'square',.025); },
+  chime(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.6,'sine',.12),i*120)); },
+  ghost(){ tone(300,1.6,'sine',.12,250); setTimeout(()=>tone(440,1.4,'sine',.08,-200),400); },
+  doom(){ tone(70,1.8,'sawtooth',.12,-20); },
+  poof(){ noise(.4,.35); tone(900,.4,'sine',.1,-700); }
+};
+$('#muteBtn').onclick=e=>{ e.stopPropagation(); muted=!muted; e.target.textContent=muted?'🔇':'🔊'; };
+
+/* ---------- speakers ---------- */
+const SPK = {
+  bailiff:{name:'Billi the Bailiff', ico:'🐈', el:'#a-bailiff'},
+  lawyer:{name:`${C.lawyerName} · AI Defence Lawyer`, ico:'🤖', el:'#a-lawyer'},
+  dip:{name:'Deepanshu', ico:'🙇‍♂️', el:'#a-dip'},
+  reporter:{name:'Court Reporter', ico:'⌨️'},
+  ghost:{name:'Ghost Deepanshu', ico:'👻'}
+};
+const ACTORS=['#a-bailiff','#a-lawyer','#a-dip'];
+function spotlight(key){
+  ACTORS.forEach(s=>$(s).classList.remove('talk','mute'));
+  const sp=SPK[key]; if(sp&&sp.el) ACTORS.forEach(s=>$(s).classList.add(s===sp.el?'talk':'mute'));
+}
+
+/* ---------- dialogue ---------- */
+let advance=null;
+dialog.addEventListener('click',()=>{ if(advance) advance(); });
+function say(who, html, opts={}){
+  const sp = typeof who==='string' ? SPK[who] : who;
+  spotlight(typeof who==='string'?who:null);
+  $('#spIco').textContent=sp.ico; $('#spName').textContent=sp.name;
+  choicesEl.innerHTML=''; tapEl.classList.remove('show');
+  const tmp=document.createElement('div'); tmp.innerHTML=html; const full=tmp.innerHTML;
+  const parts=[]; let i=0;
+  while(i<full.length){ if(full[i]==='<'){ const j=full.indexOf('>',i); parts.push(full.slice(i,j+1)); i=j+1; }
+    else if(full[i]==='&'){ const j=full.indexOf(';',i); parts.push(full.slice(i,j+1)); i=j+1; }
+    else { const cp=full.codePointAt(i); const ch=String.fromCodePoint(cp); parts.push(ch); i+=ch.length; } }
+  return new Promise(resolve=>{
+    let n=0, done=false;
+    const speed = opts.slow ? 30 : 15;
+    const finish=()=>{ done=true; lineEl.innerHTML=full; tapEl.classList.add('show'); advance=()=>{ advance=null; resolve(); }; };
+    advance=()=>finish();
+    (function tick(){ if(done) return; n++; lineEl.innerHTML=parts.slice(0,n).join('');
+      if(n%2===0 && !parts[n-1].startsWith('<')) sfx.blip();
+      if(n>=parts.length) return finish(); setTimeout(tick, speed); })();
+  });
+}
+function choose(opts, prompt){
+  if(prompt!==undefined){ $('#spIco').textContent='⚖️'; $('#spName').textContent=`Judge ${J}`; lineEl.innerHTML=prompt; spotlight(null); }
+  tapEl.classList.remove('show'); advance=null;
+  return new Promise(resolve=>{
+    choicesEl.innerHTML='';
+    opts.forEach(o=>{ const b=document.createElement('button'); b.className='btn '+(o.cls||''); b.innerHTML=o.label;
+      b.onclick=e=>{ e.stopPropagation(); audio(); choicesEl.innerHTML=''; resolve(o.value); }; choicesEl.appendChild(b); });
+  });
+}
+function bang(shake=true){ sfx.gavel(); const g=$('#gavel'); g.classList.remove('bang'); void g.offsetWidth; g.classList.add('bang');
+  if(shake){ app.classList.remove('shake'); void app.offsetWidth; app.classList.add('shake'); } }
+function card(html, {under=false}={}){ overlay.innerHTML=html; overlay.classList.add('on'); overlay.classList.toggle('under',under); return overlay.firstElementChild; }
+function closeCard(){ overlay.classList.remove('on','under'); overlay.innerHTML=''; }
+function rain(chars,count=40){ for(let i=0;i<count;i++){ const s=document.createElement('div'); s.className='fx'; s.textContent=chars[i%chars.length];
+  s.style.left=Math.random()*100+'vw'; s.style.top=(-10-Math.random()*30)+'vh'; s.style.animationDelay=(Math.random()*1.2)+'s'; s.style.fontSize=(16+Math.random()*18)+'px';
+  document.body.appendChild(s); setTimeout(()=>s.remove(),4200);} }
+function doves(n=8){ for(let i=0;i<n;i++){ const d=document.createElement('div'); d.className='dove'; d.textContent='🕊️';
+  d.style.left=(30+Math.random()*40)+'vw'; d.style.top='75vh'; d.style.setProperty('--dx',(Math.random()*240-120)+'px'); d.style.animationDelay=(i*.15)+'s';
+  document.body.appendChild(d); setTimeout(()=>d.remove(),4000);} }
+
+/* ================= SCENES ================= */
+async function sceneSummons(){
+  intro.innerHTML=`<div class="title">A SEALED SUMMONS</div>
+    <div class="envelope" id="env"><div class="env-body"></div><div class="env-flap"></div><div class="wax">A</div></div>
+    <div class="hint">tap to break the seal</div>`;
+  await new Promise(r=>$('#env').addEventListener('click',()=>{ audio(); sfx.stamp(); $('#env').classList.add('open'); setTimeout(r,800); },{once:true}));
+  intro.classList.add('fade-out'); await sleep(600); intro.remove();
+
+  card(`<div class="card">
+    <div class="mono">${C.caseNo} · HIGH COURT OF THE HEART</div>
+    <h2>Anam vs. Deepanshu</h2>
+    <p>Dear <b>${J}</b>,<br>You have been appointed <b>Judge</b> in this case. The accused awaits your judgement. Your decisions are final.</p>
+    <div class="mono" style="margin:4px 0 6px">SIGN BELOW TO ACCEPT</div>
+    <canvas class="sigpad" id="sig"></canvas>
+    <div class="sigrow"><button class="btn" id="sigClear">Clear</button><button class="btn green" id="sigOk">I accept ⚖️</button></div>
+  </div>`);
+  const cv=$('#sig'), r=cv.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+  cv.width=r.width*dpr; cv.height=r.height*dpr; const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
+  ctx.lineWidth=2.6; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#1d2a5a';
+  let drawing=false, drawn=false, last=null;
+  const pos=e=>{ const b=cv.getBoundingClientRect(); return {x:e.clientX-b.left,y:e.clientY-b.top}; };
+  cv.addEventListener('pointerdown',e=>{ drawing=true; last=pos(e); cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove',e=>{ if(!drawing) return; const p=pos(e); ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; drawn=true; });
+  ['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,()=>drawing=false));
+  $('#sigClear').onclick=()=>{ ctx.clearRect(0,0,cv.width,cv.height); drawn=false; };
+  await new Promise(res=>$('#sigOk').onclick=()=>{
+    if(!drawn){ $('#sigOk').textContent='Sign first ✍️'; return; }
+    state.signature=cv.toDataURL('image/png'); res(); });
+  sfx.stamp(); closeCard();
+}
+
+async function sceneCourtOpens(){
+  $('#plate').innerHTML=`Judge ${J}<small>PRESIDING</small>`;
+  stage.classList.add('on'); dialog.classList.add('on'); await sleep(700);
+  bang();
+  await say('bailiff', `ALL RISE for the Honourable Judge <b>${J}</b>! 🐾`);
+  await say('lawyer', `I am ${C.lawyerName}, AI lawyer. <em>Never lost a case.</em> Today… looks difficult.`);
+}
+
+async function sceneCharges(){
+  const sighs=['Sir, you are ruining my defence.','Sir, please. I am trying here.','…I am considering resigning.','Sir, what are you doing to my career?'];
+  let s=0;
+  for(let i=0;i<C.charges.length;i++){
+    const ch=C.charges[i];
+    card(`<div class="card${ch.serious?' serious':''}"><div class="file-tab">COUNT ${i+1}</div>
+      <div class="mono" style="margin-top:12px">${C.caseNo}</div><h2>${ch.count}</h2><p>${ch.detail}</p><div id="stampSlot"></div></div>`,{under:true});
+    sfx.stamp();
+    if(ch.serious){
+      app.classList.add('dim');
+      await say('bailiff', `Count ${i+1}.`, {slow:true});
+      await say('lawyer', ch.excuse, {slow:true});
+      await say('dip', ch.own, {slow:true});
+      app.classList.remove('dim');
+    } else {
+      await say('bailiff', `Count ${i+1}: ${ch.count}.`);
+      await say('lawyer', ch.excuse);
+      const obj = await choose([{label:'Sustained ✅',value:'s',cls:'green'},{label:'Overruled ❌',value:'o',cls:'red'}], `${C.lawyerName}'s objection?`);
+      bang();
+      if(obj==='s') state.objections++;
+      await say('dip', ch.own);
+      await say('lawyer', (obj==='s'?'Sustained, but… ':'')+sighs[s++ % sighs.length]);
+    }
+    const v = await choose([{label:'GUILTY',value:'GUILTY',cls:'red'},{label:'NOT GUILTY',value:'NOT GUILTY',cls:'green'}], `Count ${i+1}: your verdict?`);
+    bang(!ch.serious); sfx.stamp();
+    $('#stampSlot').innerHTML=`<div class="stamp ${v==='GUILTY'?'red':'green'}">${v}</div>`;
+    state.rulings.push({count:ch.count, v});
+    await sleep(500);
+    closeCard();
+  }
+}
+
+async function sceneEvidence(){
+  await say('lawyer', `Evidence that my client <em>loves you</em>.`);
+  for(const ex of C.exhibits){
+    card(`<div class="card excard"><div class="exlabel">${ex.title.toUpperCase()}</div>
+      <img class="photo" src="${ex.img}" alt="${ex.title}"></div>`,{under:true});
+    sfx.stamp();
+    await say('lawyer', ex.lawyer);
+    await say('dip', ex.memory, {slow:true});
+    closeCard();
+  }
+}
+
+async function sceneWitnesses(){
+  for(let i=0;i<C.witnesses.length;i++){
+    const w=C.witnesses[i];
+    await say({name:w.name, ico:w.icon}, w.says);
+    const r = await choose([{label:'OBJECTION! 🙅‍♀️',value:'x',cls:'red'},{label:'Allowed 👍',value:'ok',cls:'green'}], `Allow this witness?`);
+    bang();
+    if(r==='x') await say('bailiff', `Out you go! 🐾`);
+  }
+}
+
+async function scenePlea(){
+  await say('lawyer', `My final argument. Point one—`);
+  await say('dip', `Byte. Stop.`);
+  app.classList.add('dim');
+  await say('dip', C.plea, {slow:true});
+  bang();
+  await say('reporter', `<span style="font-family:var(--mono)">THE DEFENDANT PLEADS GUILTY ON ALL COUNTS.</span>`);
+  app.classList.remove('dim');
+  await say('lawyer', `…Fired by my own client.`);
+}
+
+async function sceneClosing(){
+  app.classList.add('dim');
+  await say('lawyer', `No more jokes. I can't defend what he did. But the data is clear: <em>he loves you.</em>`, {slow:true});
+  for(const l of C.lastWords) await say('dip', l, {slow:true});
+}
+
+async function sceneSentencing(){
+  sfx.doom();
+  await say('bailiff', `His fate is in your hands, Judge ${J}.`, {slow:true});
+  const v = await choose([
+    {label:'🕊️ Pardon',value:'pardon',cls:'green'},
+    {label:'⏳ Adjourn',value:'adjourn',cls:'blue'},
+    {label:'⚖️ Execute',value:'execute',cls:'red full'}
+  ], `<b>What is your sentence?</b>`);
+  state.verdict=v; app.classList.remove('dim'); bang();
+  if(v==='pardon') return pardon();
+  if(v==='adjourn') return adjourn();
+  return execute();
+}
+async function pardon(){
+  sfx.chime(); doves(10); rain(['🌸','✨','💛'],30);
+  await say('bailiff', `PARDON GRANTED! Open the cell door! 🐾`);
+  await say('lawyer', `MY FIRST WIN!! 🎉`);
+  await say('dip', `Thank you for a second chance, ${J}. I won't waste it.`, {slow:true});
+}
+async function adjourn(){
+  await say('bailiff', `The court needs more time. Case adjourned.`);
+  await say('dip', `Take all the time you need. The court will wait. So will I.`, {slow:true});
+}
+async function execute(){
+  app.classList.add('dim'); await sleep(500); sfx.doom(); await sleep(900);
+  bang(); sfx.poof(); $('#a-dip').classList.add('poof'); rain(['✨','🤍','🌫️'],34);
+  await sleep(1400);
+  app.classList.remove('dim');
+  await say('reporter', `<span style="font-family:var(--mono)">SENTENCE CARRIED OUT.</span>`);
+  app.classList.add('haunt'); stage.classList.add('flicker'); sfx.ghost(); await sleep(1200);
+  ghostEl.classList.add('on'); await sleep(1300);
+  for(const l of C.ghostLines) await say('ghost', l, {slow:true});
+  app.classList.remove('haunt');
+}
+
+function sceneOrder(){
+  const v=state.verdict;
+  const date=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  const head={pardon:'PARDONED 🕊️', adjourn:'ADJOURNED ⏳', execute:'EXECUTED ⚖️'}[v];
+  const note={
+    pardon:`The accused is released, on the condition that he does not waste this second chance.`,
+    adjourn:`This court will reconvene whenever the Honourable Judge wishes. The accused will wait.`,
+    execute:`Sentence carried out. Note: the accused's ghost has refused to leave, and will remain near the Judge permanently.`
+  }[v];
+  const rows=state.rulings.map((r,i)=>`<tr><td>Count ${i+1}</td><td style="color:${r.v==='GUILTY'?'var(--red)':'var(--green)'}">${r.v}</td></tr>`).join('');
+  const ghostSvg = v==='execute' ? `<svg class="order-ghost" viewBox="0 0 120 140">${ghostEl.innerHTML}</svg>` : '';
+  dialog.classList.remove('on');
+  card(`<div class="card order">${ghostSvg}
+    <div class="crest">⚖️</div>
+    <div class="mono">${C.caseNo} · HIGH COURT OF THE HEART</div>
+    <h2>COURT ORDER</h2>
+    <div class="mono">Anam vs. Deepanshu</div>
+    <div class="verdict" style="color:${v==='execute'?'var(--red)':v==='pardon'?'var(--green)':'var(--blue)'}">${head}</div>
+    <p style="font-size:15px">${note}</p>
+    <table>${rows}<tr><td>Objections sustained for ${C.lawyerName}</td><td>${state.objections}</td></tr></table>
+    <div class="mono">So ordered on ${date}</div>
+    <img class="sigimg" src="${state.signature}" alt="Judge's signature">
+    <div class="mono">Hon. Judge ${J}</div>
+    <div class="footnote">Footnote by ${C.lawyerName}: ${v==='pardon'?'First win. Framing this.':v==='adjourn'?'Defence remains optimistic. Standing by.':'The defence notes the ghost is acting without legal counsel.'}</div>
+    <div class="footnote" style="margin-top:16px">📸 Screenshot this and send it if you want to. If you don't, that's okay too.</div>
+    <div class="footnote" style="font-size:13px">Court adjourned.</div>
+  </div>`);
+  bang();
+}
+
+(async function main(){
+  await sceneSummons();
+  await sceneCourtOpens();
+  await sceneCharges();
+  await sceneEvidence();
+  await sceneWitnesses();
+  await scenePlea();
+  await sceneClosing();
+  await sceneSentencing();
+  await sleep(600);
+  sceneOrder();
+})();
+</script>
+</body>
+</html>
